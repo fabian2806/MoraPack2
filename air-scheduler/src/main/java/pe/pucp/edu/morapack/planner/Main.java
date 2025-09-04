@@ -39,13 +39,13 @@ public class Main {
         }
         Map<String, List<Vuelo>> vuelosPorOrigen = mapa.getVuelosPorOrigen();
 
-        System.out.println("Vuelos desde OJAI:");
+       /* System.out.println("Vuelos desde OJAI:");
         List<Vuelo> skboVuelos = vuelosPorOrigen.get("OJAI");
         if (skboVuelos != null) {
             for (Vuelo v : skboVuelos) {
                 System.out.println(v);
             }
-        }
+        }*/
 /*
         // Definir pedidos
         List<Pedido> pedidos = Arrays.asList(

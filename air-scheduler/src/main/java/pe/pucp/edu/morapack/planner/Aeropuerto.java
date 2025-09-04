@@ -96,7 +96,17 @@ public class Aeropuerto {
     public String leer(Scanner sc){
         if (!sc.hasNextLine()) return null;
         String linea = sc.nextLine();
-        Pattern p = Pattern.compile("(\\d+)\\s+(\\w+)\\s+(.+?)\\s+(.+?)\\s+(\\w+)\\s+(-?\\d+)\\s+(\\d+)\\s+Latitude:\\s+(.+)\\s+Longitude:\\s+(.+)");
+        Pattern p = Pattern.compile(
+                "(\\d+)\\s+" +            // ID
+                        "(\\w+)\\s+" +            // Código
+                        "(.+?)\\s{2,}" +          // Ciudad (cualquier cosa hasta dos o más espacios)
+                        "(.+?)\\s+" +             // País (hasta el siguiente espacio)
+                        "(\\w+)\\s+" +            // Abreviatura (ignored si quieres)
+                        "([+-]?\\d+)\\s+" +       // GMT
+                        "(\\d+)\\s+" +            // Capacidad
+                        "Latitude:\\s+(.+?)\\s+" + // Latitud
+                        "Longitude:\\s+(.+)"       // Longitud
+        );
         Matcher m = p.matcher(linea);
         if (m.matches()) {
             this.id = Integer.parseInt(m.group(1));
