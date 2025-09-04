@@ -119,7 +119,7 @@ public class Aeropuerto {
             this.latitud = m.group(8);
             this.longitud = m.group(9);
 
-            System.out.println(id+" "+codigo+" "+ciudad+" "+pais+" "+GMT+" "+capacidad+" "+latitud+" "+longitud);
+            //System.out.println(id+" "+codigo+" "+ciudad+" "+pais+" "+GMT+" "+capacidad+" "+latitud+" "+longitud);
 
         }
         return this.codigo;

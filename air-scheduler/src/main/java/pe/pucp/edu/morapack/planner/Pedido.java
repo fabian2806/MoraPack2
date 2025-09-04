@@ -1,34 +1,40 @@
 package pe.pucp.edu.morapack.planner;
 
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+
 public class Pedido {
-    private String id;
-    private String origen;
-    private String destino;
-    private double peso;
-    private long fechaPedido; // en timestamp o en horas simuladas
+    private int idPedido;       // Identificador único del pedido
+    private int idCliente;      // Identificador del cliente
+    private String destino;     // Ciudad o código de aeropuerto destino
+    private LocalDateTime  fecha;    // Fecha del pedido
+    private int cantidad;       // Cantidad de producto solicitada
 
-    public String getId() {
-        return id;
+    // Constructor
+    public Pedido(int idPedido, int idCliente, String destino, LocalDateTime  fecha, int cantidad) {
+        this.idPedido = idPedido;
+        this.idCliente = idCliente;
+        this.destino = destino;
+        this.fecha = fecha;
+        this.cantidad = cantidad;
     }
 
-    public void setId(String id) {
-        this.id = id;
+    // Getters y Setters
+    public int getIdPedido() {
+        return idPedido;
     }
 
-    public double getPeso() {
-        return peso;
+    public void setIdPedido(int idPedido) {
+        this.idPedido = idPedido;
     }
 
-    public void setPeso(double peso) {
-        this.peso = peso;
+    public int getIdCliente() {
+        return idCliente;
     }
 
-    public String getOrigen() {
-        return origen;
-    }
-
-    public void setOrigen(String origen) {
-        this.origen = origen;
+    public void setIdCliente(int idCliente) {
+        this.idCliente = idCliente;
     }
 
     public String getDestino() {
@@ -39,32 +45,30 @@ public class Pedido {
         this.destino = destino;
     }
 
-    public long getFechaPedido() {
-        return fechaPedido;
+    public LocalDateTime  getFecha() {
+        return fecha;
     }
 
-    public void setFechaPedido(long fechaPedido) {
-        this.fechaPedido = fechaPedido;
+    public void setFecha(LocalDateTime  fecha) {
+        this.fecha = fecha;
     }
 
-    public Pedido(String id, String origen, String destino, double peso, long fechaPedido) {
-        this.id = id;
-        this.origen = origen;
-        this.destino = destino;
-        this.peso = peso;
-        this.fechaPedido = fechaPedido;
+    public int getCantidad() {
+        return cantidad;
     }
 
-    public Pedido(String id, String origen, String destino, double peso) {
-        this.id = id;
-        this.origen = origen;
-        this.destino = destino;
-        this.peso = peso;
-        this.fechaPedido = fechaPedido;
+    public void setCantidad(int cantidad) {
+        this.cantidad = cantidad;
     }
 
     @Override
     public String toString() {
-        return id + ": " + origen + " → " + destino + " (" + peso + "kg)";
+        return "Pedido{" +
+                "idPedido=" + idPedido +
+                ", idCliente=" + idCliente +
+                ", destino='" + destino + '\'' +
+                ", fecha=" + fecha +
+                ", cantidad=" + cantidad +
+                '}';
     }
 }
