@@ -35,15 +35,9 @@ public class Main {
                 System.out.println(v);
             }
         }
-/*
-        // Definir pedidos
-        List<Pedido> pedidos = Arrays.asList(
-                new Pedido("P1", "SPIM", "SKBO", 100),
-                new Pedido("P2", "SPIM", "SKBO", 50),
-                new Pedido("P3", "SPIM", "SEQM", 30),
-                new Pedido("P4", "SPIM", "SVMI", 20),
-                new Pedido("P5", "SPIM", "SCEL", 60)
-        );
+
+
+
 /*
         // Resolver
      /*   AlgoritmoGenetico ga = new AlgoritmoGenetico(vuelos);
