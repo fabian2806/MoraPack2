@@ -13,6 +13,8 @@ public class Vuelo {
         private String destino;
         private LocalTime horaOrigen;
         private LocalTime horaDestino;
+        private LocalTime horaGMTOrigen;
+        private LocalTime horaGMTDestino;
         private int capacidad;
 
     public Vuelo() {
@@ -24,6 +26,17 @@ public class Vuelo {
         this.destino = destino;
         this.horaOrigen = horaOrigen;
         this.horaDestino = horaDestino;
+        this.capacidad = capacidad;
+    }
+
+    public Vuelo(int id, String origen, String destino, LocalTime horaOrigen, LocalTime horaDestino, LocalTime horaGMTOrigen, LocalTime horaGMTDestino, int capacidad) {
+        this.id = id;
+        this.origen = origen;
+        this.destino = destino;
+        this.horaOrigen = horaOrigen;
+        this.horaDestino = horaDestino;
+        this.horaGMTOrigen = horaGMTOrigen;
+        this.horaGMTDestino = horaGMTDestino;
         this.capacidad = capacidad;
     }
 
@@ -67,6 +80,22 @@ public class Vuelo {
         this.horaOrigen = horaOrigen;
     }
 
+    public LocalTime getHoraGMTOrigen() {
+        return horaGMTOrigen;
+    }
+
+    public void setHoraGMTOrigen(LocalTime horaGMTOrigen) {
+        this.horaGMTOrigen = horaGMTOrigen;
+    }
+
+    public LocalTime getHoraGMTDestino() {
+        return horaGMTDestino;
+    }
+
+    public void setHoraGMTDestino(LocalTime horaGMTDestino) {
+        this.horaGMTDestino = horaGMTDestino;
+    }
+
     public String getDestino() {
         return destino;
     }
@@ -97,6 +126,15 @@ public class Vuelo {
     @Override
     public String toString() {
         return "Vuelo " + id + " [" + origen + " → " + destino + "] "
-                + horaOrigen + " - " + horaDestino + " Capacidad: " + capacidad;
+                + horaOrigen + " - " + horaDestino + " Capacidad: " + capacidad + " OrigenGMT " + horaGMTOrigen + " DestinoGMT "+horaGMTDestino;
+    }
+
+    public void llenarHoraGMT(int origen,int destino ){
+            if(horaOrigen!=null){
+                this.horaGMTOrigen=horaOrigen.minusHours(origen);
+            }
+            if(horaDestino!=null){
+                this.horaGMTDestino=horaDestino.minusHours(destino);
+            }
     }
 }

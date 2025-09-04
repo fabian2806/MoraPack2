@@ -27,7 +27,7 @@ public class Main {
             aeropuertosMap.leerDatos(sc);
         }
 
-        VuelosMap mapa = new VuelosMap();
+        VuelosMap mapa = new VuelosMap(aeropuertosMap);
         String nombreArchivo = "c.1inf54.25.2.planes_vuelo.v4.20250818.txt";
         InputStream is = Main.class.getClassLoader().getResourceAsStream(nombreArchivo);
         if (is == null) {
@@ -39,13 +39,13 @@ public class Main {
         }
         Map<String, List<Vuelo>> vuelosPorOrigen = mapa.getVuelosPorOrigen();
 
-       /* System.out.println("Vuelos desde OJAI:");
-        List<Vuelo> skboVuelos = vuelosPorOrigen.get("OJAI");
+       System.out.println("Vuelos desde SPIM:");
+        List<Vuelo> skboVuelos = vuelosPorOrigen.get("SPIM");
         if (skboVuelos != null) {
             for (Vuelo v : skboVuelos) {
                 System.out.println(v);
             }
-        }*/
+        }
 /*
         // Definir pedidos
         List<Pedido> pedidos = Arrays.asList(
