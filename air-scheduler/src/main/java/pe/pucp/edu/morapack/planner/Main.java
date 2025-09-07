@@ -11,6 +11,9 @@ public class Main {
                 aeropuertosMap.leerDatos(sc);
             } else return;
         }
+        aeropuertosMap.imprimirAeropuertos();
+
+
         //Vuelos
         VuelosMap mapa = new VuelosMap(aeropuertosMap);
         try (Scanner sc = ArchivoUtils.getScannerFromResource("c.1inf54.25.2.planes_vuelo.v4.20250818.txt")) {
@@ -18,6 +21,9 @@ public class Main {
                 mapa.leerDatos(sc);
             } else return;
         }
+        mapa.imprimirVuelos();
+
+
        /*Map<String, List<Vuelo>> vuelosPorOrigen = mapa.getVuelosPorOrigen();
        System.out.println("Vuelos desde SPIM:");
         List<Vuelo> skboVuelos = vuelosPorOrigen.get("SPIM");
@@ -27,6 +33,8 @@ public class Main {
             }
         }
         */
+
+
         //Pedidos
         CargarPedidos pedidos = new CargarPedidos();
         try (Scanner sc = ArchivoUtils.getScannerFromResource("pedidos.txt")) {

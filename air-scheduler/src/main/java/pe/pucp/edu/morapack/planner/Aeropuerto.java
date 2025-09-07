@@ -93,6 +93,12 @@ public class Aeropuerto {
         this.longitud = longitud;
     }
 
+    @Override
+    public String toString() {
+        return codigo + " - " + ciudad + ", " + pais +
+                " | GMT: " + GMT + " | Capacidad: " + capacidad + " | Latitud: " + latitud + " | Longitud: " + longitud;
+    }
+
     public String leer(Scanner sc){
         if (!sc.hasNextLine()) return null;
         String linea = sc.nextLine();

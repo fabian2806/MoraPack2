@@ -44,6 +44,12 @@ public class AeropuertosMap {
         }
     }
 
+    public void imprimirAeropuertos() {
+        for (Aeropuerto ae : aeropuertos.values()) {
+            System.out.println(ae);
+        }
+    }
+
 
 
 }
