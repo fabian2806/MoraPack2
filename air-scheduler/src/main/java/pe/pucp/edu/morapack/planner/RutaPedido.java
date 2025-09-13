@@ -37,76 +37,56 @@ public class RutaPedido {
         this.eta = otra.eta;
     }
     
-    private double calcularCosto() {
+    public double calcularCosto() {
         if (vuelos == null || vuelos.isEmpty()) {
             return 0.0;
         }
-        
-        double costoTotal = 0.0;
-        
-        for (Vuelo vuelo : vuelos) {
-            try {
-                // Obtener el costo del vuelo de forma segura
-                Object costoObj = vuelo.getClass().getMethod("getCosto").invoke(vuelo);
-                double costoVuelo = 0.0;
-                
-                // Convertir el costo a double de forma segura
-                if (costoObj instanceof Number) {
-                    costoVuelo = ((Number) costoObj).doubleValue();
-                } else if (costoObj != null) {
-                    try {
-                        costoVuelo = Double.parseDouble(costoObj.toString());
-                    } catch (NumberFormatException e) {
-                        costoVuelo = 100.0; // Valor por defecto si no se puede convertir a número
-                    }
-                }
-                
-                // Validar que el costo sea un valor razonable
-                if (costoVuelo < 0) {
-                    costoVuelo = 0; // No permitir costos negativos
-                } else if (costoVuelo > 1_000_000) { // Límite superior razonable
-                    costoVuelo = 1_000_000;
-                }
-                
-                costoTotal += costoVuelo;
-                
-                // Validar que el costo total no sea excesivo
-                if (costoTotal > 10_000_000) { // Límite total razonable para una ruta
-                    return 10_000_000;
-                }
-                
-            } catch (Exception e) {
-                // En caso de error, usar un costo base por vuelo
-                costoTotal += 100.0;
-            }
-        }
-        
-        return costoTotal;
+        // Asumimos un costo fijo por vuelo ya que no hay método getCosto()
+        return vuelos.size() * 100.0; // Costo fijo de 100 por vuelo
     }
-    
-    private LocalDateTime calcularEta() {
+
+    public LocalDateTime calcularEta() {
         if (vuelos == null || vuelos.isEmpty()) {
             return null;
         }
-        
         // Obtener la hora de llegada del último vuelo
         Vuelo ultimoVuelo = vuelos.get(vuelos.size() - 1);
         try {
-            // Intentar obtener la hora de destino como LocalDateTime
-            Object horaDestino = ultimoVuelo.getClass().getMethod("getHoraDestino").invoke(ultimoVuelo);
-            if (horaDestino instanceof LocalDateTime) {
-                return (LocalDateTime) horaDestino;
-            } else if (horaDestino instanceof LocalTime) {
-                // Si es LocalTime, combinarlo con la fecha actual
-                LocalTime time = (LocalTime) horaDestino;
-                return LocalDateTime.of(LocalDate.now(), time);
-            }
+            // Usamos la fecha de simulación + la hora de destino
+            LocalTime horaDestino = ultimoVuelo.getHoraDestino();
+            return LocalDateTime.of(LocalDate.now(), horaDestino);
         } catch (Exception e) {
             // En caso de error, devolver la hora actual más 2 horas
             return LocalDateTime.now().plusHours(2);
         }
+    }
+
+    public LocalDateTime calcularTiempoLlegada() {
+        if (vuelos == null || vuelos.isEmpty()) {
+            return null;
+        }
+        Vuelo ultimoVuelo = vuelos.get(vuelos.size() - 1);
+        // Usamos la fecha actual + la hora de destino
+        return LocalDateTime.of(LocalDate.now(), ultimoVuelo.getHoraDestino());
+    }
+
+    public long calcularTiempoViajeMinutos() {
+        if (vuelos == null || vuelos.isEmpty()) {
+            return 0;
+        }
+        Vuelo primerVuelo = vuelos.get(0);
+        Vuelo ultimoVuelo = vuelos.get(vuelos.size() - 1);
         
-        return LocalDateTime.now().plusHours(2); // Valor por defecto
+        // Usamos la fecha actual + las horas de los vuelos
+        LocalDateTime inicio = LocalDateTime.of(LocalDate.now(), primerVuelo.getHoraOrigen());
+        LocalDateTime fin = LocalDateTime.of(LocalDate.now(), ultimoVuelo.getHoraDestino());
+        
+        // Si el vuelo termina al día siguiente, sumamos un día
+        if (fin.isBefore(inicio)) {
+            fin = fin.plusDays(1);
+        }
+        
+        return Duration.between(inicio, fin).toMinutes();
     }
 
     // Getters y setters

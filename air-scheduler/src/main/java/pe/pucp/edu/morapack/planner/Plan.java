@@ -35,167 +35,231 @@ public class Plan {
     }
     
     public void evaluar() {
-        if (grafo == null || pedidos == null || asignaciones == null) {
-            this.fitness = Double.MAX_VALUE / 1000.0;
+        if (grafo == null || pedidos == null || pedidos.isEmpty()) {
+            this.fitness = 0.0;
             return;
         }
-        
+
+        // Mostrar los primeros 5 pedidos para referencia
         System.out.println("\n=== INICIO EVALUACIÓN ===");
-        
+        System.out.println("Total de pedidos: " + pedidos.size());
+        System.out.println("Pedidos con rutas asignadas: " + asignaciones.size());
+
+        // Variables para el cálculo del fitness
         double costoTotal = 0;
         double penalizacionTardanza = 0;
         double penalizacionCapacidad = 0;
+        double penalizacionEscalas = 0;
+        double penalizacionTiempoViaje = 0;
         
-        // Mapa para rastrear la capacidad utilizada en cada vuelo
-        Map<String, Double> capacidadPorVuelo = new HashMap<>();
+        int totalPedidos = Math.max(1, pedidos.size());
+        int pedidosAsignados = 0;
         
-        try {
-            // Evaluar cada pedido y sus rutas
-            for (Map.Entry<Integer, List<RutaPedido>> entry : asignaciones.entrySet()) {
-                int idPedido = entry.getKey();
-                Pedido pedido = pedidos.get(idPedido);
-                
-                if (pedido == null) {
-                    System.out.println("Pedido " + idPedido + " no encontrado");
-                    continue;
-                }
-                
-                double cantidadAsignada = 0;
-                
-                for (RutaPedido ruta : entry.getValue()) {
-                    // Verificar que la fracción sea válida
-                    if (ruta.getFraccion() <= 0 || ruta.getFraccion() > 1) {
-                        System.out.println("Fracción inválida: " + ruta.getFraccion());
-                        this.fitness = Double.MAX_VALUE / 1000.0;
-                        return;
-                    }
-                    
-                    // Acumular la cantidad asignada
-                    cantidadAsignada += ruta.getFraccion() * pedido.getCantidad();
-                    
-                    // Calcular costo de la ruta
-                    double costoRuta = ruta.getCosto() * ruta.getFraccion();
-                    System.out.println("Costo de ruta para pedido " + idPedido + ": " + costoRuta);
-                    
-                    if (Double.isInfinite(costoRuta) || Double.isNaN(costoRuta)) {
-                        System.out.println("¡CUIDADO! Costo inválido detectado: " + costoRuta);
-                        costoRuta = 0;
-                    }
-                    
-                    costoTotal += costoRuta;
-                    
-                    // Calcular penalización por tardanza
-                    if (ruta.getEta() != null && pedido.getDeadline() != null) {
-                        if (ruta.getEta().isAfter(pedido.getDeadline())) {
-                            long horasTardanza = Duration.between(pedido.getDeadline(), ruta.getEta()).toHours();
-                            double penalizacion = Math.min(1000, horasTardanza) * ruta.getFraccion();
-                            System.out.println("Penalización por tardanza: " + penalizacion + " horas");
-                            penalizacionTardanza += penalizacion;
-                        }
-                    }
-                    
-                    // Acumular capacidad utilizada en cada vuelo
-                    for (Vuelo vuelo : ruta.getVuelos()) {
-                        try {
-                            String idVuelo = "";
-                            try {
-                                idVuelo = (String) vuelo.getClass().getMethod("getIdVuelo").invoke(vuelo);
-                            } catch (Exception e) {
-                                idVuelo = String.format("%s-%s-%s", 
-                                    vuelo.getOrigen(), vuelo.getDestino(), 
-                                    vuelo.getHoraOrigen().toString());
-                            }
-                            
-                            double capacidadUsada = capacidadPorVuelo.getOrDefault(idVuelo, 0.0);
-                            double incremento = pedido.getCantidad() * ruta.getFraccion();
-                            capacidadUsada += incremento;
-                            capacidadPorVuelo.put(idVuelo, capacidadUsada);
-                            
-                            System.out.println("Vuelo " + idVuelo + " - Capacidad usada: " + capacidadUsada);
-                            
-                        } catch (Exception e) {
-                            System.out.println("Error al procesar vuelo: " + e.getMessage());
-                            e.printStackTrace();
-                        }
-                    }
-                }
-                
-                // Verificar que se haya asignado la cantidad correcta (con cierta tolerancia)
-                double diferencia = Math.abs(cantidadAsignada - pedido.getCantidad());
-                System.out.println("Cantidad asignada: " + cantidadAsignada + "/" + pedido.getCantidad() + 
-                                 " (diferencia: " + diferencia + ")");
-                
-                if (diferencia > 0.01) {
-                    System.out.println("Error: Cantidad asignada no coincide con la requerida");
-                    this.fitness = Double.MAX_VALUE / 1000.0;
-                    return;
-                }
-            }
-            
-            // Calcular penalización por sobrecapacidad
-            System.out.println("\nVerificando capacidad de vuelos:");
-            for (Map.Entry<String, Double> entry : capacidadPorVuelo.entrySet()) {
-                String idVuelo = entry.getKey();
-                double capacidadUsada = entry.getValue();
-                
-                System.out.println("  Vuelo " + idVuelo + " - Capacidad usada: " + capacidadUsada);
-                
-                try {
-                    Vuelo vuelo = grafo.obtenerVueloPorId(idVuelo);
-                    if (vuelo != null) {
-                        double capacidadMaxima = 100; // Valor por defecto
-                        try {
-                            Object capacidadObj = vuelo.getClass().getMethod("getCapacidad").invoke(vuelo);
-                            if (capacidadObj instanceof Number) {
-                                capacidadMaxima = ((Number)capacidadObj).doubleValue();
-                            }
-                        } catch (Exception e) {
-                            System.out.println("    Usando capacidad por defecto (100) para vuelo " + idVuelo);
-                        }
-                        
-                        System.out.println("    Capacidad máxima: " + capacidadMaxima);
-                        
-                        if (capacidadUsada > capacidadMaxima) {
-                            double exceso = capacidadUsada - capacidadMaxima;
-                            double penalizacion = Math.min(1000, exceso * 10);
-                            System.out.println("    Penalización por sobrecapacidad: " + penalizacion);
-                            penalizacionCapacidad += penalizacion;
-                        }
-                    } else {
-                        System.out.println("    Vuelo no encontrado en el grafo");
-                    }
-                } catch (Exception e) {
-                    System.out.println("    Error al verificar capacidad: " + e.getMessage());
-                    e.printStackTrace();
-                }
-            }
-            
-            // Calcular el fitness final (menor es mejor)
-            System.out.println("\n=== RESUMEN EVALUACIÓN ===");
-            System.out.println("Costo total: " + costoTotal);
-            System.out.println("Penalización por tardanza: " + (penalizacionTardanza * 10));
-            System.out.println("Penalización por capacidad: " + (penalizacionCapacidad * 5));
-            
-            this.fitness = costoTotal + 
-                         (penalizacionTardanza * 10) + 
-                         (penalizacionCapacidad * 5);
-            
-            System.out.println("Fitness calculado: " + this.fitness);
-            
-            // Asegurar que el fitness no sea infinito
-            if (Double.isInfinite(this.fitness) || Double.isNaN(this.fitness)) {
-                System.out.println("¡ADVERTENCIA! Fitness inválido detectado");
-                this.fitness = Double.MAX_VALUE / 1000.0;
-            }
-            
-            System.out.println("Fitness final: " + this.fitness);
-            System.out.println("=== FIN EVALUACIÓN ===\n");
-            
-        } catch (Exception e) {
-            System.out.println("ERROR en evaluación: " + e.getMessage());
-            e.printStackTrace();
-            this.fitness = Double.MAX_VALUE / 1000.0;
+        // Mapas para rastrear la capacidad utilizada
+        Map<Integer, Integer> capacidadVueloUtilizada = new HashMap<>();
+        Map<String, Integer> capacidadAeropuertoUtilizada = new HashMap<>();
+        
+        // Inicializar capacidades de aeropuertos
+        if (grafo.getAeropuertos() != null) {
+            grafo.getAeropuertos().values().forEach(aeropuerto -> 
+                capacidadAeropuertoUtilizada.put(aeropuerto.getCodigo(), 0));
         }
+        
+        // Evaluar cada pedido asignado
+        for (Map.Entry<Integer, List<RutaPedido>> entry : asignaciones.entrySet()) {
+            int idPedido = entry.getKey();
+            Pedido pedido = pedidos.get(idPedido);
+            
+            if (pedido == null || entry.getValue() == null || entry.getValue().isEmpty()) {
+                continue;
+            }
+            
+            boolean pedidoValido = true;
+            List<RutaPedido> rutas = entry.getValue();
+            
+            // Primera pasada: verificar capacidades sin modificar
+            for (RutaPedido ruta : rutas) {
+                if (ruta == null || ruta.getVuelos() == null || ruta.getVuelos().isEmpty()) {
+                    pedidoValido = false;
+                    break;
+                }
+                
+                // Verificar capacidad de cada vuelo en la ruta
+                for (Vuelo vuelo : ruta.getVuelos()) {
+                    int capacidadVuelo = vuelo.getCapacidad();
+                    int capacidadUsada = capacidadVueloUtilizada.getOrDefault(vuelo.getId(), 0);
+                    
+                    if (capacidadUsada + pedido.getCantidad() > capacidadVuelo) {
+                        // Penalización por exceder capacidad de vuelo
+                        double exceso = (capacidadUsada + pedido.getCantidad() - capacidadVuelo) * 50.0;
+                        penalizacionCapacidad += exceso;
+                        pedidoValido = false;
+                    }
+                    
+                    // Verificar capacidad del aeropuerto de origen
+                    String codigoOrigen = vuelo.getOrigen();
+                    Aeropuerto aeropuerto = grafo.getAeropuerto(codigoOrigen);
+                    if (aeropuerto != null) {
+                        int capacidadAeropuerto = aeropuerto.getCapacidad();
+                        int capacidadAeropuertoUsada = capacidadAeropuertoUtilizada.getOrDefault(codigoOrigen, 0);
+                        
+                        if (capacidadAeropuertoUsada + pedido.getCantidad() > capacidadAeropuerto) {
+                            // Penalización por exceder capacidad del aeropuerto
+                            double exceso = (capacidadAeropuertoUsada + pedido.getCantidad() - capacidadAeropuerto) * 30.0;
+                            penalizacionCapacidad += exceso;
+                            pedidoValido = false;
+                        }
+                    }
+                }
+            }
+            
+            // Si el pedido no es válido, saltar a la siguiente iteración
+            if (!pedidoValido) {
+                continue;
+            }
+            
+            // Segunda pasada: actualizar capacidades y calcular costos
+            pedidosAsignados++;
+            
+            for (RutaPedido ruta : rutas) {
+                // Actualizar capacidades de vuelos
+                for (Vuelo vuelo : ruta.getVuelos()) {
+                    // Actualizar capacidad del vuelo
+                    int capacidadUsada = capacidadVueloUtilizada.getOrDefault(vuelo.getId(), 0);
+                    capacidadVueloUtilizada.put(vuelo.getId(), capacidadUsada + pedido.getCantidad());
+                    
+                    // Actualizar capacidad del aeropuerto de origen
+                    String codigoOrigen = vuelo.getOrigen();
+                    int capacidadAeropuertoUsada = capacidadAeropuertoUtilizada.getOrDefault(codigoOrigen, 0);
+                    capacidadAeropuertoUtilizada.put(codigoOrigen, capacidadAeropuertoUsada + pedido.getCantidad());
+                }
+                
+                // Calcular costos y penalizaciones para esta ruta
+                costoTotal += ruta.calcularCosto();
+                
+                // Penalización por tiempo de viaje
+                long tiempoViajeMinutos = ruta.calcularTiempoViajeMinutos();
+                if (tiempoViajeMinutos > 240) { // 4 horas = 240 minutos
+                    penalizacionTiempoViaje += (tiempoViajeMinutos - 240) * 0.5;
+                }
+                
+                // Penalización por número de escalas
+                int numEscalas = Math.max(0, ruta.getVuelos().size() - 1);
+                penalizacionEscalas += numEscalas * 10.0;
+                
+                // Penalización por tardanza
+                LocalDateTime eta = ruta.calcularEta();
+                if (eta != null && pedido.getDeadline() != null && eta.isAfter(pedido.getDeadline())) {
+                    long minutosTardanza = Duration.between(pedido.getDeadline(), eta).toMinutes();
+                    penalizacionTardanza += minutosTardanza * 2.0;
+                }
+            }
+        }
+        
+        // Calcular el fitness (invertimos las penalizaciones para que mayor sea mejor)
+        double tasaAsignacion = (double) pedidosAsignados / totalPedidos;
+        double sumaPenalizaciones = penalizacionCapacidad + penalizacionTardanza + 
+                                  penalizacionEscalas + penalizacionTiempoViaje;
+        
+        // Asegurar que no haya valores negativos
+        sumaPenalizaciones = Math.max(0, sumaPenalizaciones);
+        
+        // El fitness es una combinación de la tasa de asignación y el inverso de las penalizaciones
+        // Añadimos 1 al denominador para evitar división por cero
+        this.fitness = tasaAsignacion / (1.0 + sumaPenalizaciones / 1000.0);
+        
+        // Mostrar resumen
+        System.out.println("\n=== RESUMEN FINAL ===");
+        System.out.printf("Pedidos asignados: %d (%.1f%%)\n", 
+            pedidosAsignados, (tasaAsignacion * 100));
+        System.out.printf("Costo total: %.2f\n", costoTotal);
+        System.out.printf("Penalización total: %.2f\n", sumaPenalizaciones);
+        System.out.printf("  - Por capacidad: %.2f\n", penalizacionCapacidad);
+        System.out.printf("  - Por tardanza: %.2f\n", penalizacionTardanza);
+        System.out.printf("  - Por escalas: %.2f\n", penalizacionEscalas);
+        System.out.printf("  - Por tiempo de viaje: %.2f\n", penalizacionTiempoViaje);
+        System.out.printf("Fitness: %.6f\n", this.fitness);
+        System.out.println("===================\n");
+    }
+    
+    public void mostrarResumen() {
+        System.out.println("\n=== RESUMEN DEL MEJOR PLAN ===");
+        System.out.printf("Fitness: %.4f\n", this.fitness);
+        System.out.printf("Número de pedidos asignados: %d\n", this.asignaciones.size());
+        
+        double costoTotal = 0;
+        int pedidosAtiempo = 0;
+        int pedidosRetrasados = 0;
+        
+        for (List<RutaPedido> rutas : asignaciones.values()) {
+            for (RutaPedido ruta : rutas) {
+                Pedido pedido = pedidos.get(ruta.getIdPedido());
+                List<Vuelo> vuelos = ruta.getVuelos();
+                
+                if (vuelos == null || vuelos.isEmpty()) continue;
+                
+                Vuelo ultimoVuelo = vuelos.get(vuelos.size() - 1);
+                LocalDateTime tiempoEntrega = LocalDateTime.of(LocalDate.now(), ultimoVuelo.getHoraDestino());
+                boolean aTiempo = pedido.getDeadline() == null || !tiempoEntrega.isAfter(pedido.getDeadline());
+                
+                if (aTiempo) pedidosAtiempo++;
+                else pedidosRetrasados++;
+                
+                // Acumular costos
+                for (Vuelo vuelo : vuelos) {
+                    try {
+                        Object costoObj = vuelo.getClass().getMethod("getCosto").invoke(vuelo);
+                        if (costoObj instanceof Number) {
+                            double costoVuelo = ((Number)costoObj).doubleValue();
+                            costoTotal += costoVuelo * (pedido.getCantidad() / 100.0);
+                        }
+                    } catch (Exception e) {
+                        costoTotal += 100.0 * (pedido.getCantidad() / 100.0);
+                    }
+                }
+            }
+        }
+        
+        System.out.printf("Costo total estimado: $%.2f\n", costoTotal);
+        System.out.printf("Pedidos a tiempo: %d (%.1f%%)\n", 
+                pedidosAtiempo, 
+                (pedidosAtiempo * 100.0 / Math.max(1, pedidosAtiempo + pedidosRetrasados)));
+        System.out.printf("Pedidos retrasados: %d (%.1f%%)\n", 
+                pedidosRetrasados, 
+                (pedidosRetrasados * 100.0 / Math.max(1, pedidosAtiempo + pedidosRetrasados)));
+        
+        System.out.println("\nDetalle de pedidos:");
+        System.out.println("ID\tOrigen\tDestino\tTiempo Límite\tEstado");
+        System.out.println("-".repeat(80));
+        
+        for (List<RutaPedido> rutas : asignaciones.values()) {
+            for (RutaPedido ruta : rutas) {
+                Pedido p = pedidos.get(ruta.getIdPedido());
+                List<Vuelo> vuelosRuta = ruta.getVuelos();
+                
+                if (vuelosRuta == null || vuelosRuta.isEmpty()) {
+                    System.out.printf("%d\t%s\t%s\t%s\tNO ASIGNADO\n", 
+                            p.getIdPedido(), 
+                            "N/A", 
+                            p.getDestino(), 
+                            p.getDeadline() != null ? p.getDeadline().toString() : "Sin límite");
+                } else {
+                    Vuelo ultimoVuelo = vuelosRuta.get(vuelosRuta.size() - 1);
+                    LocalDateTime tiempoEntrega = LocalDateTime.of(LocalDate.now(), ultimoVuelo.getHoraDestino());
+                    boolean aTiempo = p.getDeadline() == null || !tiempoEntrega.isAfter(p.getDeadline());
+                    
+                    System.out.printf("%d\t%s\t%s\t%s\t%s (%s)\n", 
+                            p.getIdPedido(), 
+                            vuelosRuta.get(0).getOrigen(), 
+                            p.getDestino(), 
+                            p.getDeadline() != null ? p.getDeadline().toString() : "Sin límite",
+                            aTiempo ? "A TIEMPO" : "RETRASADO",
+                            tiempoEntrega);
+                }
+            }
+        }
+        
+        System.out.println("\n=== FIN DEL REPORTE ===\n");
     }
     
     // Método para clonar el plan

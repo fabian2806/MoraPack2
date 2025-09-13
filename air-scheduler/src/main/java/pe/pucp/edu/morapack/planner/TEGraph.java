@@ -176,6 +176,14 @@ public class TEGraph {
         return aeropuertos.get(codigo);
     }
     
+    /**
+     * Obtiene el mapa de aeropuertos del grafo.
+     * @return Mapa de códigos de aeropuerto a objetos Aeropuerto
+     */
+    public Map<String, Aeropuerto> getAeropuertos() {
+        return this.aeropuertos;
+    }
+    
     //CÓDIGO PARA HACER LAS PRUEBAS:
     // ---- Helpers de inspección (para pruebas) ----
     public List<Arc> getOutgoing(String nodeId) {
