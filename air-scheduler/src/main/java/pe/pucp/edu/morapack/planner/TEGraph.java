@@ -1,85 +1,52 @@
 package pe.pucp.edu.morapack.planner;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.*;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static pe.pucp.edu.morapack.planner.SimulationConfig.SIM_DATE;
 
 public class TEGraph {
-    public class Node{
-        private final String nodeId;
-        private final Aeropuerto aeropuerto;
-        private final LocalDateTime timestampUTC;
-        private final NodeType nodeType;
-
-        public Node(String nodeId, Aeropuerto aeropuerto, LocalDateTime timestampUTC, NodeType nodeType) {
-            this.nodeId = nodeId;
-            this.aeropuerto = aeropuerto;
-            this.timestampUTC = timestampUTC;
-            this.nodeType = nodeType;
-        }
-
-        public String getNodeId() {
-            return nodeId;
-        }
-
-        public Aeropuerto getAeropuerto(){
-            return aeropuerto;
-        }
-
-        //public String getId() { return aeropuerto.getCodigo() + "@" + timestampUTC; }
-    }
-
-    public class Arc{
-        private final String arcId;
-        private final Node from, to;
-        private final int capacity;
-        private final Vuelo vuelo;
-        private final ArcType arcType;
-
-        public Arc(String arcId, Node from, Node to, int capacity, Vuelo vuelo, ArcType arcType) {
-            this.arcId = arcId;
-            this.from = from;
-            this.to = to;
-            this.capacity = capacity;
-            this.vuelo = vuelo;
-            this.arcType = arcType;
-        }
-
-        public String getArcId() {
-            return arcId;
-        }
-
-        public Node getFrom() { return from; }
-        public Node getTo() { return to; }
-        public int getCapacity() { return capacity; }
-        public Vuelo getVuelo() { return vuelo; }
-        public ArcType getArcType() { return arcType; }
-    }
-
+    private final Map<String, List<Vuelo>> vuelosPorOrigen;
+    private final List<Vuelo> vuelos;
+    private final Map<String, Aeropuerto> aeropuertos;
+    
     public Map<String, Node> nodesById = new HashMap<>();
     public Map<String, Arc> arcsById = new HashMap<>();
-
     public Map<String, List<Arc>> out = new HashMap<>();
     public Map<String, TreeSet<LocalDateTime>> eventsByAirport = new HashMap<>();
 
-    public TEGraph(AeropuertosMap aeropuertos, VuelosMap vuelos){
-        build(aeropuertos, vuelos);
+    public TEGraph(AeropuertosMap aeropuertosMap, VuelosMap vuelosMap){
+        this.vuelosPorOrigen = new HashMap<>();
+        this.vuelos = new ArrayList<>();
+        this.aeropuertos = aeropuertosMap.getAeropuertos();
+        
+        // Inicializar vuelos
+        if (vuelosMap != null) {
+            for (List<Vuelo> vuelos : vuelosMap.getVuelosPorOrigen().values()) {
+                for (Vuelo vuelo : vuelos) {
+                    agregarVuelo(vuelo);
+                }
+            }
+        }
+        
+        build();
     }
-
-    private void build (AeropuertosMap aeropuertos, VuelosMap vuelos){
-        Map<String, Aeropuerto> aps = aeropuertos.getAeropuertos();
-        Map<String, List<Vuelo>> vuelosPorOrigen = vuelos.getVuelosPorOrigen();
-
+    
+    private void agregarVuelo(Vuelo vuelo) {
+        vuelos.add(vuelo);
+        vuelosPorOrigen.computeIfAbsent(vuelo.getOrigen(), k -> new ArrayList<>()).add(vuelo);
+    }
+    
+    private void build(){
         //Recuperamos la lista de vuelos que parten de un origen
         //Armamos Arcos de vuelo y Eventos por aeropuerto
         for (Map.Entry<String, List<Vuelo>> vs: vuelosPorOrigen.entrySet()){
-            Aeropuerto aeropuertoActual = aps.get(vs.getKey());
+            Aeropuerto aeropuertoActual = aeropuertos.get(vs.getKey());
             for (Vuelo v: vs.getValue()){
                 String origen = v.getOrigen();
                 String destino = v.getDestino();
-                Aeropuerto aeropuertoDestino = aeropuertos.obtener(destino);
+                Aeropuerto aeropuertoDestino = aeropuertos.get(destino);
 
                 //El archivo del profe aun no tiene dia, solo horas:
                 //SIM_DATE es una constante en SimulationConfig.java
@@ -103,7 +70,7 @@ public class TEGraph {
 
         //Armamos arcos de espera
         for (Map.Entry<String, TreeSet<LocalDateTime>> e: eventsByAirport.entrySet()){
-            Aeropuerto aeropuertoActual = aps.get(e.getKey());
+            Aeropuerto aeropuertoActual = aeropuertos.get(e.getKey());
             if (aeropuertoActual == null) continue;
             //La capacidad se gestiona dentro de addArc
             //int capacidad = Math.max(1, aeropuertoActual.getCapacidad());
@@ -137,8 +104,8 @@ public class TEGraph {
     }
 
     private void addArc(Node n1, Node n2, Vuelo v, ArcType arcType){
-        String fromId = n1.aeropuerto.getCodigo() + "@" + n1.timestampUTC;
-        String toId   = n2.aeropuerto.getCodigo() + "@" + n2.timestampUTC;
+        String fromId = n1.aeropuerto.getCodigo() + "@" + n1.time;
+        String toId   = n2.aeropuerto.getCodigo() + "@" + n2.time;
         String arcId = fromId + "→" + toId;
         int capacidad = (v != null ? v.getCapacidad() : Math.max(1, n1.aeropuerto.getCapacidad()));
 
@@ -153,6 +120,62 @@ public class TEGraph {
         eventsByAirport.computeIfAbsent(destino,s -> new TreeSet<>()).add(arrUTC);
     }
 
+    /**
+     * Obtiene todos los vuelos que salen de un aeropuerto de origen dado.
+     * @param origen Código IATA del aeropuerto de origen
+     * @return Lista de vuelos que salen del aeropuerto especificado
+     */
+    public List<Vuelo> obtenerVuelosSalientes(String origen) {
+        return new ArrayList<>(vuelosPorOrigen.getOrDefault(origen, Collections.emptyList()));
+    }
+
+    /**
+     * Obtiene un vuelo por su ID.
+     * @param idVuelo ID del vuelo a buscar
+     * @return El vuelo con el ID especificado, o null si no se encuentra
+     */
+    public Vuelo obtenerVueloPorId(String idVuelo) {
+        return vuelos.stream()
+            .filter(v -> {
+                try {
+                    Object id = v.getClass().getMethod("getIdVuelo").invoke(v);
+                    return id != null && id.toString().equals(idVuelo);
+                } catch (Exception e) {
+                    return false;
+                }
+            })
+            .findFirst()
+            .orElse(null);
+    }
+    
+    /**
+     * Obtiene una lista de todos los vuelos del grafo
+     */
+    public List<Vuelo> getVuelos() {
+        return new ArrayList<>(vuelos);
+    }
+    
+    /**
+     * Verifica si un aeropuerto con el código especificado existe en el grafo
+     * @param codigoAeropuerto Código IATA del aeropuerto a verificar
+     * @return true si el aeropuerto existe, false en caso contrario
+     */
+    public boolean existeAeropuerto(String codigoAeropuerto) {
+        return codigoAeropuerto != null && aeropuertos.containsKey(codigoAeropuerto);
+    }
+    
+    /**
+     * Obtiene una lista de todos los aeropuertos en el grafo
+     * @return Lista de aeropuertos
+     */
+    public List<Aeropuerto> obtenerAeropuertos() {
+        return new ArrayList<>(aeropuertos.values());
+    }
+    
+    public Aeropuerto getAeropuerto(String codigo) {
+        return aeropuertos.get(codigo);
+    }
+    
     //CÓDIGO PARA HACER LAS PRUEBAS:
     // ---- Helpers de inspección (para pruebas) ----
     public List<Arc> getOutgoing(String nodeId) {
@@ -186,4 +209,64 @@ public class TEGraph {
         }
     }
 
+    public class Node{
+        private final String nodeId;
+        private final Aeropuerto aeropuerto;
+        private final LocalDateTime time;
+        private final NodeType nodeType;
+
+        public Node(String nodeId, Aeropuerto aeropuerto, LocalDateTime time, NodeType nodeType) {
+            this.nodeId = nodeId;
+            this.aeropuerto = aeropuerto;
+            this.time = time;
+            this.nodeType = nodeType;
+        }
+
+        public String getNodeId() {
+            return nodeId;
+        }
+
+        public Aeropuerto getAeropuerto(){
+            return aeropuerto;
+        }
+
+        public LocalDateTime getTime() {
+            return time;
+        }
+
+        public NodeType getNodeType() {
+            return nodeType;
+        }
+    }
+
+    public enum NodeType { SALIDA, LLEGADA, ESPERA }
+
+    public class Arc{
+        private final String arcId;
+        private final Node from, to;
+        private final int capacity;
+        private final Vuelo vuelo;
+        private final ArcType arcType;
+
+        public Arc(String arcId, Node from, Node to, int capacity, Vuelo vuelo, ArcType arcType) {
+            this.arcId = arcId;
+            this.from = from;
+            this.to = to;
+            this.capacity = capacity;
+            this.vuelo = vuelo;
+            this.arcType = arcType;
+        }
+
+        public String getArcId() {
+            return arcId;
+        }
+
+        public Node getFrom() { return from; }
+        public Node getTo() { return to; }
+        public int getCapacity() { return capacity; }
+        public Vuelo getVuelo() { return vuelo; }
+        public ArcType getArcType() { return arcType; }
+    }
+
+    public enum ArcType { VUELO, ESPERA }
 }

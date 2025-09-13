@@ -1,6 +1,5 @@
 package pe.pucp.edu.morapack.planner;
 
-
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Scanner;
@@ -9,7 +8,8 @@ public class Pedido {
     private int idPedido;       // Identificador único del pedido
     private int idCliente;      // Identificador del cliente
     private String destino;     // Ciudad o código de aeropuerto destino
-    private LocalDateTime  fecha;    // Fecha del pedido
+    private LocalDateTime fecha;    // Fecha del pedido
+    private LocalDateTime deadline; // Fecha límite de entrega
     private int cantidad;       // Cantidad de producto solicitada
 
     // Constructor
@@ -18,11 +18,20 @@ public class Pedido {
     public Pedido() {
     }
 
-    public Pedido(int idPedido, int idCliente, String destino, LocalDateTime  fecha, int cantidad) {
+    public Pedido(int idPedido, int idCliente, String destino, LocalDateTime fecha, int cantidad) {
         this.idPedido = idPedido;
         this.idCliente = idCliente;
         this.destino = destino;
         this.fecha = fecha;
+        this.cantidad = cantidad;
+    }
+
+    public Pedido(int idPedido, int idCliente, String destino, LocalDateTime fecha, LocalDateTime deadline, int cantidad) {
+        this.idPedido = idPedido;
+        this.idCliente = idCliente;
+        this.destino = destino;
+        this.fecha = fecha;
+        this.deadline = deadline;
         this.cantidad = cantidad;
     }
 
@@ -51,12 +60,20 @@ public class Pedido {
         this.destino = destino;
     }
 
-    public LocalDateTime  getFecha() {
+    public LocalDateTime getFecha() {
         return fecha;
     }
 
-    public void setFecha(LocalDateTime  fecha) {
+    public void setFecha(LocalDateTime fecha) {
         this.fecha = fecha;
+    }
+
+    public LocalDateTime getDeadline() {
+        return deadline;
+    }
+
+    public void setDeadline(LocalDateTime deadline) {
+        this.deadline = deadline;
     }
 
     public int getCantidad() {
@@ -70,7 +87,7 @@ public class Pedido {
     @Override
     public String toString() {
         return idPedido + " | Cliente: " + idCliente + " | Destino: " + destino +
-                " | Fecha: " + fecha + " | Cant: " + cantidad;
+                " | Fecha: " + fecha + " | Deadline: " + deadline + " | Cant: " + cantidad;
     }
 
     public void leer(Scanner sc){
@@ -81,7 +98,8 @@ public class Pedido {
         idCliente = Integer.parseInt(partes[1].trim());
         destino = partes[2].trim();
         fecha = LocalDateTime.parse(partes[3].trim());
-        cantidad = Integer.parseInt(partes[4].trim());
+        deadline = LocalDateTime.parse(partes[4].trim());
+        cantidad = Integer.parseInt(partes[5].trim());
 
     }
 }

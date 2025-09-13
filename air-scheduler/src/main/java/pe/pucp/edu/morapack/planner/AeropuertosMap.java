@@ -80,7 +80,21 @@ public class AeropuertosMap {
         }
     }
 
-
-
+    /**
+     * Verifica si dos aeropuertos están en el mismo continente
+     * @param codigo1 Código IATA del primer aeropuerto
+     * @param codigo2 Código IATA del segundo aeropuerto
+     * @return true si están en el mismo continente, false en caso contrario
+     */
+    public boolean esMismoContinente(String codigo1, String codigo2) {
+        Aeropuerto a1 = aeropuertos.get(codigo1);
+        Aeropuerto a2 = aeropuertos.get(codigo2);
+        
+        if (a1 == null || a2 == null) {
+            return false;
+        }
+        
+        return a1.getContinente() != null && 
+               a1.getContinente().equals(a2.getContinente());
+    }
 }
-

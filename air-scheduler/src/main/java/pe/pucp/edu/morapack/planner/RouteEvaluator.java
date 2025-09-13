@@ -32,7 +32,7 @@ public class RouteEvaluator {
         List<TEGraph.Arc> arcs = r.getArcs();
         if (arcs == null) return null;
         for (TEGraph.Arc a : arcs){
-            if (a.getArcType() == ArcType.VUELO){
+            if (a.getArcType() == TEGraph.ArcType.VUELO){
                 return a.getFrom().getAeropuerto();
             }
         }
