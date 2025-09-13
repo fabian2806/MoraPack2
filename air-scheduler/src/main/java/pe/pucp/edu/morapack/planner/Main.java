@@ -13,6 +13,7 @@ public class Main {
         }
         aeropuertosMap.imprimirAeropuertos();
 
+        System.out.println("holi");
 
         //Vuelos
         VuelosMap mapa = new VuelosMap(aeropuertosMap);
@@ -21,7 +22,7 @@ public class Main {
                 mapa.leerDatos(sc);
             } else return;
         }
-        mapa.imprimirVuelos();
+        //mapa.imprimirVuelos();
 
 
        /*Map<String, List<Vuelo>> vuelosPorOrigen = mapa.getVuelosPorOrigen();
@@ -42,16 +43,11 @@ public class Main {
                 pedidos.leerDatos(sc);
             } else return;
         }
-        pedidos.mostrar();
+        //pedidos.mostrar();
 
+        TEGraph G = new TEGraph(aeropuertosMap, mapa);
 
+        G.printSomeSamples(3, 2);
 
-
-/*
-        // Resolver
-     /*   AlgoritmoGenetico ga = new AlgoritmoGenetico(vuelos);
-        ga.resolver(pedidos);
-
-        */
     }
 }

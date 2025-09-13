@@ -10,6 +10,10 @@ public class AeropuertosMap {
         aeropuertos = new HashMap<>();
     }
 
+    public Map<String, Aeropuerto> getAeropuertos() {
+        return aeropuertos;
+    }
+
     public void agregar(Aeropuerto ae, String key) {
         if (key ==null || ae == null) return; // Evitar claves o aeropuertos nulos
         aeropuertos.put(key, ae);
@@ -24,11 +28,37 @@ public class AeropuertosMap {
     }
 
     public void leerDatos(Scanner sc) {
-        while (sc.hasNextLine()) {
-            Aeropuerto ae = new Aeropuerto();
-            String key = ae.leer(sc); // key = origen
-            if(key!=null) agregar(ae, key);
+        String continenteActual = null;
+
+        while (sc.hasNext()) {
+            // ¿Lo siguiente empieza con un entero (el índice de aeropuerto)?
+            if (sc.hasNextInt()) {
+                Aeropuerto ae = new Aeropuerto();
+                String key = ae.leer(sc);     // <-- tu método0 existente, sin cambios
+                if (key != null) {
+                    ae.setContinente(continenteActual);   // asigna continente del bloque
+                    agregar(ae, key);                     // guarda en el mapa
+                }
+            } else {
+                // No es una línea de aeropuerto → lee la línea completa (encabezado)
+                String linea = sc.nextLine().trim();
+                if (linea.isEmpty()) continue;
+
+                // Limpiamos por lo de "América del Sur. GMT CAPACIDAD" en el archivo
+                continenteActual = limpiarEncabezadoContinente(linea);
+
+            }
         }
+    }
+
+    private String limpiarEncabezadoContinente(String linea) {
+        String s = linea.replace("*", "").trim();
+        // Si viene con columnas ("GMT", "CAPACIDAD"), corta antes de "GMT"
+        int idx = s.indexOf("GMT");
+        if (idx > 0) s = s.substring(0, idx).trim();
+        // Quita puntos finales y espacios dobles
+        s = s.replaceAll("\\.+$", "").replaceAll("\\s{2,}", " ").trim();
+        return s;
     }
 
     // Leer datos desde System.in

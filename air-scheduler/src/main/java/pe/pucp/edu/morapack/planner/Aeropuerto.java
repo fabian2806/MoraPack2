@@ -9,6 +9,7 @@ public class Aeropuerto {
     private String codigo;
     private String ciudad;
     private String pais;
+    private String continente;
     private int GMT;
     private int capacidad;
     private String latitud;
@@ -61,6 +62,10 @@ public class Aeropuerto {
         this.pais = pais;
     }
 
+    public String getContinente() { return continente; }
+
+    public void setContinente(String continente) { this.continente = continente; }
+
     public int getGMT() {
         return GMT;
     }
@@ -95,7 +100,7 @@ public class Aeropuerto {
 
     @Override
     public String toString() {
-        return codigo + " - " + ciudad + ", " + pais +
+        return codigo + " - " + ciudad + ", " + pais + ", " + continente +
                 " | GMT: " + GMT + " | Capacidad: " + capacidad + " | Latitud: " + latitud + " | Longitud: " + longitud;
     }
 
