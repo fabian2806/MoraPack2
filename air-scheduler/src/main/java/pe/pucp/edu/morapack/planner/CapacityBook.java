@@ -27,4 +27,21 @@ public class CapacityBook {
         if (used(arc.getArcId()) <= 0) usedByArc.remove(arc.getArcId());
     }
 
+    //Helpers para impresión:
+    public int residualPath(java.util.List<String> arcIds, pe.pucp.edu.morapack.planner.TEGraph g) {
+        int min = Integer.MAX_VALUE;
+        for (String arcId : arcIds) {
+            pe.pucp.edu.morapack.planner.TEGraph.Arc a = g.arcsById.get(arcId);
+            if (a == null) continue;
+            int res = residual(a); // = max(0, a.getCapacity() - used(arcId))
+            if (res < min) min = res;
+        }
+        return (min == Integer.MAX_VALUE) ? 0 : min;
+    }
+
+    public boolean canFitPath(java.util.List<String> arcIds, pe.pucp.edu.morapack.planner.TEGraph g, int q) {
+        return residualPath(arcIds, g) >= q;
+    }
+
+
 }

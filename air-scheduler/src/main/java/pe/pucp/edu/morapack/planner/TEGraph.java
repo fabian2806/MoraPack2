@@ -28,6 +28,10 @@ public class TEGraph {
             return aeropuerto;
         }
 
+        public LocalDateTime getTimestampUTC(){
+            return timestampUTC;
+        }
+
         //public String getId() { return aeropuerto.getCodigo() + "@" + timestampUTC; }
     }
 
@@ -58,11 +62,19 @@ public class TEGraph {
         public ArcType getArcType() { return arcType; }
     }
 
+    private int horizonDays;
+
+
     public Map<String, Node> nodesById = new HashMap<>();
     public Map<String, Arc> arcsById = new HashMap<>();
 
     public Map<String, List<Arc>> out = new HashMap<>();
     public Map<String, TreeSet<LocalDateTime>> eventsByAirport = new HashMap<>();
+
+    public TEGraph(AeropuertosMap aeropuertos, VuelosMap vuelos, int horizonDays){
+        this.horizonDays = Math.max(1, horizonDays);
+        build(aeropuertos, vuelos);
+    }
 
     public TEGraph(AeropuertosMap aeropuertos, VuelosMap vuelos){
         build(aeropuertos, vuelos);
@@ -77,28 +89,23 @@ public class TEGraph {
         for (Map.Entry<String, List<Vuelo>> vs: vuelosPorOrigen.entrySet()){
             Aeropuerto aeropuertoActual = aps.get(vs.getKey());
             for (Vuelo v: vs.getValue()){
-                String origen = v.getOrigen();
-                String destino = v.getDestino();
-                Aeropuerto aeropuertoDestino = aeropuertos.obtener(destino);
+                Aeropuerto aeropuertoDestino = aeropuertos.obtener(v.getDestino());
 
-                //El archivo del profe aun no tiene dia, solo horas:
-                //SIM_DATE es una constante en SimulationConfig.java
-                LocalDateTime depUTC = LocalDateTime.of(SIM_DATE, v.getHoraGMTOrigen());
-                LocalDateTime arrUTC = LocalDateTime.of(SIM_DATE, v.getHoraGMTDestino());
-                //Contemplar un posible adjust arrival por desfase del dia de vuelo
-                if (arrUTC.isBefore(depUTC)) arrUTC = arrUTC.plusDays(1);
+                for (int d = 0; d < horizonDays; d++) {
+                    LocalDate base = SIM_DATE.plusDays(d);
 
-                //Node n1 = new Node(aeropuertoActual, depUTC, NodeType.SALIDA);
-                //Node n2 = new Node(aeropuertoDestino, arrUTC, NodeType.LLEGADA);
+                    LocalDateTime depUTC = LocalDateTime.of(base, v.getHoraGMTOrigen());
+                    LocalDateTime arrUTC = LocalDateTime.of(base, v.getHoraGMTDestino());
+                    if (arrUTC.isBefore(depUTC)) arrUTC = arrUTC.plusDays(1);
 
-                Node n1 = getOrCreateNode(aeropuertoActual, depUTC, NodeType.SALIDA);
-                Node n2 = getOrCreateNode(aeropuertoDestino, arrUTC, NodeType.LLEGADA);
+                    Node n1 = getOrCreateNode(aeropuertoActual, depUTC, NodeType.SALIDA);
+                    Node n2 = getOrCreateNode(aeropuertoDestino, arrUTC, NodeType.LLEGADA);
 
-                //n1 es from, n2 es to:
-                addArc(n1, n2, v, ArcType.VUELO);
-                //Agregamos los eventos al aeropuerto:
-                addEventsByAirport(origen, destino, depUTC, arrUTC);
+                    addArc(n1, n2, v, ArcType.VUELO);
+                    addEventsByAirport(v.getOrigen(), v.getDestino(), depUTC, arrUTC);
+                }
             }
+
         }
 
         //Armamos arcos de espera
