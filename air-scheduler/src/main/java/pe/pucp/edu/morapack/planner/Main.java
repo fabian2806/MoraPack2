@@ -130,52 +130,22 @@ public class Main {
         //Fin de la impresión
 
         //
-        //Continuar con memético...
-        //Te dejo unas consideraciones:
-        /*
-        Línea 85: cand es la lista de candidatos por pedido. Es decir, 'cand' representa todas las rutas candidatas para
-        un ÚNICO pedido. Lo dejo así para que lo manejes como creas conveniente para el memético. Estas son las recomendaciones
-        de GPT:
-
-        Objetivo: usar las rutas CANDIDATAS generadas por RoutePlanner y armar un Plan global
-// con un algoritmo memético. NO volver a buscar en el grafo: el memético trabaja SOLO
-// con este pool de candidatas.
-//
-// En el Main dispones de:
-//   - TEGraph G           : grafo temporal (nodos=eventos, arcos=vuelos/esperas)
-//   - CapacityBook capBook: capacidades GLOBALES (solo reservar al final)
-//   - SLAService sla      : 48h intra / 72h inter + pickup
-//   - Map<Integer,Pedido> pedidosMap (lo armamos arriba)
-//   - Map<Integer,List<CandidateRoute>> candPorPedido (lo armamos arriba)
-//
-// Reglas clave para el GA/Memético:
-//   1) Individuo = elección de a lo sumo 1 candidata por pedido (o ninguna).
-//   2) Fitness (maximizar):
-//        - +#pedidos asignados (o suma de cantidades)
-//        - -penalizaciones FUERTES si rompe capacidad (debe ser casi prohibitivo)
-//        - desempatar con ETA más temprana y menos hops.
-//      Sugerencia: usa un libro de capacidad LOCAL (delta) por individuo:
-//        Map<String,Integer> delta;  // arcId -> carga adicional en el plan candidato
-//        boolean canAssign(route,q): para cada arcId de route,
-//             res = capBook.residual(arcId) - delta.getOrDefault(arcId,0)
-//             si res < q => no asignar esa candidata
-//        si asignas, delta.merge(arcId, q, Integer::sum)
-//   3) Cruce y mutación SIEMPRE verifican `canAssign(...)` con el delta local.
-//   4) Al terminar, COMMIT GLOBAL (reservar en capBook) SOLO para el mejor plan:
-//        for (arcId : bestRoute.arcIds) capBook.reserve(G.arcsById.get(arcId), pedido.getCantidad());
-//
-
-        Long story short:
-
-        - Usar `pedidosMap` y `candPorPedido` como inputs del GA/memético.
-//  - NO reconstruir rutas desde el grafo; trabajar SOLO con este pool.
-//  - Respetar capacidad con un "delta" local por individuo (no tocar capBook global).
-//  - Al finalizar, reservar globalmente en capBook SOLO el mejor plan.
-
-
-         */
-
-
-
+        // Ejecutar el algoritmo memético para asignar rutas a los pedidos
+        //
+        System.out.println("\n=== EJECUTANDO ALGORITMO MEMÉTICO ===");
+        
+        // Crear e inicializar el algoritmo memético
+        AlgoritmoMemetico memetico = new AlgoritmoMemetico(
+            G,          // Grafo temporal
+            capBook,    // Libro de capacidades global
+            pedidosMap, // Mapa de pedidos
+            candPorPedido // Rutas candidatas por pedido
+        );
+        
+        // Ejecutar el algoritmo
+        System.out.println("Iniciando búsqueda de solución óptima...");
+        memetico.ejecutar();
+        
+        System.out.println("\n=== FIN DEL PROGRAMA ===");
     }
 }
