@@ -330,51 +330,57 @@ public class AlgoritmoMemetico {
                 
                 // Mostrar ruta detallada
                 System.out.print("  Ruta: ");
-                String lastAirport = "";
-                int waitCount = 0;
-                
-                for (String arcId : ruta.arcIds) {
-                    TEGraph.Arc arco = grafo.arcsById.get(arcId);
-                    if (arco != null) {
-                        String from = arco.getFrom().getAeropuerto().getCodigo();
-                        String to = arco.getTo().getAeropuerto().getCodigo();
-                        
-                        if (from.equals(to)) {
-                            // Es un arco de espera
-                            waitCount++;
-                            lastAirport = to;
-                        } else {
-                            // Mostrar espera acumulada si existe
-                            if (waitCount > 0) {
-                                System.out.printf("%s (espera %d) -> ", lastAirport, waitCount);
-                                waitCount = 0;
+                if (ruta.arcIds == null || ruta.arcIds.isEmpty()) {
+                    // Para pedidos directos, mostrar ID del pedido y destino
+                    System.out.printf("Pedido %d - %s (Directo)", pedidoId, pedido.getDestino());
+                } else {
+                    String lastAirport = "";
+                    int waitCount = 0;
+                    
+                    for (String arcId : ruta.arcIds) {
+                        TEGraph.Arc arco = grafo.arcsById.get(arcId);
+                        if (arco != null) {
+                            String from = arco.getFrom().getAeropuerto().getCodigo();
+                            String to = arco.getTo().getAeropuerto().getCodigo();
+                            
+                            if (from.equals(to)) {
+                                // Es un arco de espera
+                                waitCount++;
+                                lastAirport = to;
+                            } else {
+                                // Mostrar espera acumulada si existe
+                                if (waitCount > 0) {
+                                    System.out.printf("%s (espera %d) -> ", lastAirport, waitCount);
+                                    waitCount = 0;
+                                }
+                                System.out.print(from + " -> ");
+                                lastAirport = to;
                             }
-                            System.out.print(from + " -> ");
-                            lastAirport = to;
                         }
                     }
-                }
-                
-                // Mostrar última espera si existe
-                if (waitCount > 0) {
-                    System.out.printf("%s (espera %d) -> ", lastAirport, waitCount);
-                }
-                
-                // Mostrar último aeropuerto
-                if (!ruta.arcIds.isEmpty()) {
-                    TEGraph.Arc lastArco = grafo.arcsById.get(ruta.arcIds.get(ruta.arcIds.size() - 1));
-                    if (lastArco != null) {
-                        System.out.print(lastArco.getTo().getAeropuerto().getCodigo());
+                    
+                    // Mostrar última espera si existe
+                    if (waitCount > 0) {
+                        System.out.printf("%s (espera %d) -> ", lastAirport, waitCount);
+                    }
+                    
+                    // Mostrar último aeropuerto si hay arcos
+                    if (!ruta.arcIds.isEmpty()) {
+                        TEGraph.Arc lastArco = grafo.arcsById.get(ruta.arcIds.get(ruta.arcIds.size() - 1));
+                        if (lastArco != null) {
+                            System.out.print(lastArco.getTo().getAeropuerto().getCodigo());
+                        }
                     }
                 }
                 
                 System.out.println("\n" + "-".repeat(50));
             } else {
-                // Mostrar pedidos no asignados
-                System.out.printf("\nPedido %d (Cantidad: %d) -> NO ASIGNADO\n%s\n", 
+                // Solo mostrar el destino para pedidos no asignados
+                Pedido pedido = pedidosMap.get(pedidoId);
+                System.out.printf("\nPedido %d (Cantidad: %d) -> NO ASIGNADO A %s%n", 
                     pedidoId, 
-                    pedidosMap.get(pedidoId).getCantidad(),
-                    "-".repeat(50));
+                    pedido.getCantidad(),
+                    pedido.getDestino());
             }
         }
     }
@@ -580,51 +586,57 @@ public class AlgoritmoMemetico {
                 
                 // Mostrar ruta detallada
                 System.out.print("  Ruta: ");
-                String lastAirport = "";
-                int waitCount = 0;
-                
-                for (String arcId : ruta.arcIds) {
-                    TEGraph.Arc arco = grafo.arcsById.get(arcId);
-                    if (arco != null) {
-                        String from = arco.getFrom().getAeropuerto().getCodigo();
-                        String to = arco.getTo().getAeropuerto().getCodigo();
-                        
-                        if (from.equals(to)) {
-                            // Es un arco de espera
-                            waitCount++;
-                            lastAirport = to;
-                        } else {
-                            // Mostrar espera acumulada si existe
-                            if (waitCount > 0) {
-                                System.out.printf("%s (espera %d) -> ", lastAirport, waitCount);
-                                waitCount = 0;
+                if (ruta.arcIds == null || ruta.arcIds.isEmpty()) {
+                    // Para pedidos directos, mostrar ID del pedido y destino
+                    System.out.printf("%s (Directo)",  pedido.getDestino());
+                } else {
+                    String lastAirport = "";
+                    int waitCount = 0;
+                    
+                    for (String arcId : ruta.arcIds) {
+                        TEGraph.Arc arco = grafo.arcsById.get(arcId);
+                        if (arco != null) {
+                            String from = arco.getFrom().getAeropuerto().getCodigo();
+                            String to = arco.getTo().getAeropuerto().getCodigo();
+                            
+                            if (from.equals(to)) {
+                                // Es un arco de espera
+                                waitCount++;
+                                lastAirport = to;
+                            } else {
+                                // Mostrar espera acumulada si existe
+                                if (waitCount > 0) {
+                                    System.out.printf("%s (espera %d) -> ", lastAirport, waitCount);
+                                    waitCount = 0;
+                                }
+                                System.out.print(from + " -> ");
+                                lastAirport = to;
                             }
-                            System.out.print(from + " -> ");
-                            lastAirport = to;
                         }
                     }
-                }
-                
-                // Mostrar última espera si existe
-                if (waitCount > 0) {
-                    System.out.printf("%s (espera %d) -> ", lastAirport, waitCount);
-                }
-                
-                // Mostrar último aeropuerto
-                if (!ruta.arcIds.isEmpty()) {
-                    TEGraph.Arc lastArco = grafo.arcsById.get(ruta.arcIds.get(ruta.arcIds.size() - 1));
-                    if (lastArco != null) {
-                        System.out.print(lastArco.getTo().getAeropuerto().getCodigo());
+                    
+                    // Mostrar última espera si existe
+                    if (waitCount > 0) {
+                        System.out.printf("%s (espera %d) -> ", lastAirport, waitCount);
+                    }
+                    
+                    // Mostrar último aeropuerto si hay arcos
+                    if (!ruta.arcIds.isEmpty()) {
+                        TEGraph.Arc lastArco = grafo.arcsById.get(ruta.arcIds.get(ruta.arcIds.size() - 1));
+                        if (lastArco != null) {
+                            System.out.print(lastArco.getTo().getAeropuerto().getCodigo());
+                        }
                     }
                 }
                 
                 System.out.println("\n" + "-".repeat(50));
             } else {
-                // Mostrar pedidos no asignados
-                System.out.printf("\nPedido %d (Cantidad: %d) -> NO ASIGNADO\n%s\n", 
+                // Solo mostrar el destino para pedidos no asignados
+                Pedido pedido = pedidosMap.get(pedidoId);
+                System.out.printf("\nPedido %d (Cantidad: %d) -> NO ASIGNADO A %s%n", 
                     pedidoId, 
-                    pedidosMap.get(pedidoId).getCantidad(),
-                    "-".repeat(50));
+                    pedido.getCantidad(),
+                    pedido.getDestino());
             }
         }
         
