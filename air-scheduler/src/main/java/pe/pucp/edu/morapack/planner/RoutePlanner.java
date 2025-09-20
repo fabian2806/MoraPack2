@@ -37,6 +37,10 @@ public class RoutePlanner {
         java.util.Map<String, CandidateRoute> uniq = new java.util.HashMap<>(); // firma -> cand
 
         for (String origen : origenes) {
+
+            //Comentar al jp:
+            if (origen.equalsIgnoreCase(p.getDestino())) continue;
+
             // Llamamos al mono-origen
             java.util.List<CandidateRoute> parciales = generarCandidatas(p, origen, kTotal);
 
@@ -56,7 +60,7 @@ public class RoutePlanner {
 
         java.util.List<CandidateRoute> all = new java.util.ArrayList<>(uniq.values());
 
-        // MISMO criterio de orden que ya usas
+        // MISMO criterio de orden
         all.sort(java.util.Comparator
                 .comparing((CandidateRoute c) -> c.arrUTC)
                 .thenComparing((CandidateRoute c) -> -c.minResidual)
@@ -90,14 +94,13 @@ public class RoutePlanner {
         class Label {
             String nodeId;
             LocalDateTime t;
-            //double cost;
             int hops;
             int minResidual;
             List<String> path;
 
             Label(String nodeId, LocalDateTime t) {
-                this.nodeId = nodeId; this.t = t;
-                //this.cost = 0;
+                this.nodeId = nodeId;
+                this.t = t;
                 this.hops = 0;
                 this.minResidual = Integer.MAX_VALUE;
                 this.path = new ArrayList<>();
@@ -105,7 +108,6 @@ public class RoutePlanner {
 
             Label extend(TEGraph.Arc a){
                 Label nx = new Label(a.getTo().getNodeId(), a.getTo().getTimestampUTC());
-                //nx.cost = this.cost + ( (a.getArcType() == ArcType.VUELO && a.getVuelo() != null) ? a.getVuelo().get);
                 nx.hops = this.hops + ( (a.getArcType() == ArcType.VUELO ? 1 : 0));
 
                 int residual = capBook.residual(a);
