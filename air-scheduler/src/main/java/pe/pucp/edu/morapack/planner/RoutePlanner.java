@@ -37,6 +37,10 @@ public class RoutePlanner {
         java.util.Map<String, CandidateRoute> uniq = new java.util.HashMap<>(); // firma -> cand
 
         for (String origen : origenes) {
+
+            //Comentar al jp:
+            if (origen.equalsIgnoreCase(p.getDestino())) continue;
+
             // Llamamos al mono-origen
             java.util.List<CandidateRoute> parciales = generarCandidatas(p, origen, kTotal);
 
@@ -56,7 +60,7 @@ public class RoutePlanner {
 
         java.util.List<CandidateRoute> all = new java.util.ArrayList<>(uniq.values());
 
-        // MISMO criterio de orden que ya usas
+        // MISMO criterio de orden
         all.sort(java.util.Comparator
                 .comparing((CandidateRoute c) -> c.arrUTC)
                 .thenComparing((CandidateRoute c) -> -c.minResidual)

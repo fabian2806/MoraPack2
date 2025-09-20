@@ -1,7 +1,12 @@
 package pe.pucp.edu.morapack.planner;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.TreeSet;
+
 public class Main {
     public static void main(String[] args) {
         //Aeropuertos
@@ -60,7 +65,9 @@ public class Main {
         RoutePlanner planner = new RoutePlanner(G, aeropuertosMap, sla, capBook);
 
         //String ORIGEN = "LOWW";
-        var ORIGENES = java.util.List.of("LOWW", "EDDI", "LKPR"); // <- Lima, Berlin, Praga (por ahora)
+        //var ORIGENES = java.util.List.of("SKBO","SEQM","SVMI","SBBR","SPIM","SLLP","SCEL","SABE","SGAS","SUAA","LATI","EDDI","LOWW","EBCI","UMMS","LBSF","LKPR","LDZA","EKCH","EHAM","VIDP","OSDI","OERK","OMDB","OAKB","OOMS","OYSN","OPKC","UBBB","OJAI"); // <- Lima, Berlin, Praga (por ahora)
+
+        var ORIGENES = java.util.List.of("SPIM", "EBCI", "UBBB");
 
 
         java.util.List<Pedido> listaPedidos = new java.util.ArrayList<>(pedidos.getColaPedidos());
@@ -145,7 +152,74 @@ public class Main {
         // Ejecutar el algoritmo
         System.out.println("Iniciando búsqueda de solución óptima...");
         memetico.ejecutar();
-        
+
+        System.out.println("\n=== OCUPACIÓN DE ALMACENES ===");
+
+        //Para imprimir bien las horas:
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+
+        for (String origen : ORIGENES){
+            System.out.println("\nOrigen: " + origen + "\n");
+
+            TreeSet<LocalDateTime> eventos = G.eventsByAirport.get(origen);
+            if (eventos == null || eventos.size() < 2) continue;
+
+            int capacidad = -1;
+            LocalDateTime prev = null;
+
+            for (LocalDateTime t : eventos){
+                if (prev == null){
+                    prev = t;
+                    continue;
+                }
+                String fromId = origen + "@" + prev;
+                String toId   = origen + "@" + t;
+                String arcId = fromId + "→" + toId;
+
+                TEGraph.Arc arc = G.arcsById.get(arcId);
+
+                if (capacidad == -1){
+                    capacidad = arc.getCapacity();
+                }
+
+                LocalDateTime dep = arc.getFrom().getTimestampUTC();
+                LocalDateTime arr = arc.getTo().getTimestampUTC();
+                int ocupacion = capBook.used(arcId);
+                String saturacion = obtenerSaturacion(capacidad, ocupacion);
+
+                System.out.printf("(%s - %s)  Ocupación: %d/%d (Estado: %s) %n", dep.format(fmt), arr.format(fmt), ocupacion, capacidad, saturacion);
+
+                prev = t;
+
+            }
+
+            capacidad = -1;
+            System.out.println("\n" + "-".repeat(50));
+        }
+
+
         System.out.println("\n=== FIN DEL PROGRAMA ===");
     }
+
+     public static String obtenerSaturacion (int capacidad, int ocupacion){
+
+        double saturacion = (double) ocupacion / capacidad;
+        saturacion = Math.round(saturacion * 100.0);
+        String mensaje;
+
+        if (saturacion < 33.33){
+            mensaje = "Disponible ✅" + saturacion + "%";
+        }
+        else if (saturacion < 66.66){
+            mensaje = "Limitado ⚠\uFE0F" + saturacion + "%";
+        }
+        else {
+            mensaje = "Saturado ❌" + saturacion + "%";
+        }
+
+        return mensaje;
+    }
+
 }
+
+

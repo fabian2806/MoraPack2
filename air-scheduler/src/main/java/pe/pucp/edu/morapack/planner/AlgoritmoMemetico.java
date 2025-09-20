@@ -1,5 +1,8 @@
 package pe.pucp.edu.morapack.planner;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 public class AlgoritmoMemetico {
@@ -27,6 +30,10 @@ public class AlgoritmoMemetico {
         this.candidatasPorPedido = candidatasPorPedido;
         this.random = new Random();
     }
+
+    //Para imprimir bien las horas:
+    DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+
     
     // Clase interna para representar un individuo (solución)
     private class Individuo {
@@ -322,27 +329,32 @@ public class AlgoritmoMemetico {
                 Pedido pedido = pedidosMap.get(pedidoId);
                 CandidateRoute ruta = candidatasPorPedido.get(pedidoId).get(idxRuta);
                 
-                System.out.printf("Pedido %d (Cantidad: %d) -> ", 
-                    pedidoId, pedido.getCantidad());
+                System.out.printf("Pedido %d (Cantidad: %d) (Fecha de creacion: %s) -> ",
+                    pedidoId, pedido.getCantidad(), pedido.getFecha().format(fmt));
                 System.out.printf("ETA: %s, Saltos: %d%n", 
                     ruta.arrUTC.toLocalTime().toString().substring(0, 5),
                     ruta.hops);
                 
                 // Mostrar ruta detallada
-                System.out.print("  Ruta: ");
+                System.out.print("  Ruta: \n");
                 if (ruta.arcIds == null || ruta.arcIds.isEmpty()) {
                     // Para pedidos directos, mostrar ID del pedido y destino
                     System.out.printf("Pedido %d - %s (Directo)", pedidoId, pedido.getDestino());
                 } else {
                     String lastAirport = "";
                     int waitCount = 0;
+                    LocalDateTime waitTimeStart = null;
                     
                     for (String arcId : ruta.arcIds) {
                         TEGraph.Arc arco = grafo.arcsById.get(arcId);
                         if (arco != null) {
                             String from = arco.getFrom().getAeropuerto().getCodigo();
                             String to = arco.getTo().getAeropuerto().getCodigo();
-                            
+
+                            if (waitTimeStart == null) {
+                                waitTimeStart = arco.getFrom().getTimestampUTC();
+                            }
+
                             if (from.equals(to)) {
                                 // Es un arco de espera
                                 waitCount++;
@@ -350,10 +362,12 @@ public class AlgoritmoMemetico {
                             } else {
                                 // Mostrar espera acumulada si existe
                                 if (waitCount > 0) {
-                                    System.out.printf("%s (espera %d) -> ", lastAirport, waitCount);
+                                    LocalDateTime dep = arco.getFrom().getTimestampUTC();
+                                    System.out.printf("  %s (espera %d) (Inicio: %s | Fin: %s)%n", lastAirport, waitCount, waitTimeStart.format(fmt), dep.format(fmt));
+                                    waitTimeStart = null;
                                     waitCount = 0;
                                 }
-                                System.out.print(from + " -> ");
+                                System.out.print("  " + from + " -> ");
                                 lastAirport = to;
                             }
                         }
@@ -368,7 +382,15 @@ public class AlgoritmoMemetico {
                     if (!ruta.arcIds.isEmpty()) {
                         TEGraph.Arc lastArco = grafo.arcsById.get(ruta.arcIds.get(ruta.arcIds.size() - 1));
                         if (lastArco != null) {
-                            System.out.print(lastArco.getTo().getAeropuerto().getCodigo());
+                            String codigo = lastArco.getTo().getAeropuerto().getCodigo();
+                            int capacidad = lastArco.getCapacity();
+                            int ocupacion = capacidadGlobal.used(lastArco.getArcId());
+                            LocalDateTime dep = lastArco.getFrom().getTimestampUTC();
+                            LocalDateTime arr = lastArco.getTo().getTimestampUTC();
+
+
+
+                            System.out.printf("%s (Inicio: %s | Fin: %s) (Capacidad: %s/%s)", codigo, dep.format(fmt), arr.format(fmt), ocupacion, capacidad);
                         }
                     }
                 }
